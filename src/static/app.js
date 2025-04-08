@@ -81,6 +81,64 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  async function loadActivities() {
+    const activitiesList = document.getElementById("activities-list");
+    activitiesList.innerHTML = "<p>Loading activities...</p>";
+
+    try {
+      const response = await fetch("/activities");
+      const activities = await response.json();
+      activitiesList.innerHTML = "";
+
+      for (const [name, details] of Object.entries(activities)) {
+        const card = document.createElement("div");
+        card.className = "activity-card";
+
+        card.innerHTML = `
+          <h4>${name}</h4>
+          <p>${details.description}</p>
+          <p><strong>Schedule:</strong> ${details.schedule}</p>
+          <p><strong>Max Participants:</strong> ${details.max_participants}</p>
+          <div class="participants-section">
+            <h5>Participants:</h5>
+            <ul id="participants-${name.replace(/\s+/g, "-")}">
+              <li>Loading participants...</li>
+            </ul>
+          </div>
+        `;
+
+        activitiesList.appendChild(card);
+
+        // Fetch and display participants
+        loadParticipants(name);
+      }
+    } catch (error) {
+      activitiesList.innerHTML = "<p>Error loading activities.</p>";
+    }
+  }
+
+  async function loadParticipants(activityName) {
+    const participantsList = document.getElementById(`participants-${activityName.replace(/\s+/g, "-")}`);
+
+    try {
+      const response = await fetch(`/activities/${activityName}/participants`);
+      const data = await response.json();
+      participantsList.innerHTML = "";
+
+      if (data.participants.length === 0) {
+        participantsList.innerHTML = "<li>No participants yet.</li>";
+      } else {
+        data.participants.forEach((participant) => {
+          const listItem = document.createElement("li");
+          listItem.textContent = participant;
+          participantsList.appendChild(listItem);
+        });
+      }
+    } catch (error) {
+      participantsList.innerHTML = "<li>Error loading participants.</li>";
+    }
+  }
+
   // Initialize app
-  fetchActivities();
+  loadActivities();
 });
